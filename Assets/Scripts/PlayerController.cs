@@ -25,4 +25,9 @@ public class PlayerController : MonoBehaviour
             rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
         }
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        print("Triggered");
+    }
 }
