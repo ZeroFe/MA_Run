@@ -6,11 +6,11 @@ using UnityEngine.Serialization;
 public class Spawner : MonoBehaviour
 {
     [Tooltip("사용할 장애물 Object 목록")] 
-    public List<GameObject> obstacleObjects;
-    private Queue<GameObject> obstacleQueue = new Queue<GameObject>();
+    public List<MoveLeft> obstacleObjects;
+    private Queue<MoveLeft> obstacleQueue = new Queue<MoveLeft>();
     [Tooltip("사용할 보상 Object 목록")] 
-    public List<GameObject> rewardObjects;
-    private Queue<GameObject> rewardQueue = new Queue<GameObject>();
+    public List<MoveLeft> rewardObjects;
+    private Queue<MoveLeft> rewardQueue = new Queue<MoveLeft>();
 
     [Header("Spawn Setting")]
     [FormerlySerializedAs("spawnInterval")] 
@@ -21,7 +21,7 @@ public class Spawner : MonoBehaviour
 
     public float spawnPosX = 20.0f;
     public float initHeight = 0.0f;
-    public int maxHeight = 5;
+    public int maxHeight = 4;
 
     void Start()
     {
@@ -41,16 +41,16 @@ public class Spawner : MonoBehaviour
     IEnumerator IECheckSpawn()
     {
         float obstacleSpawnRemainTime = 0.0f;
+        float rewardSpawnRemainTime = 0.0f;
         // 이번에 생성할지 말지 판단한다
         while (true)
         {
-            bool obstacleSpawned = false;
-            // 함정 높이 결정
-            int obstacleHeight = UnityEngine.Random.Range(0, maxHeight);
+            // 함정 높이 결정 : 함정은 위나 아래에만 나오게
+            bool isUpObstacle = Random.value > 0.5f;
+            int obstacleHeight = isUpObstacle ? maxHeight - 1 : 0;
             // 함정 생성?
             if (obstacleSpawnRemainTime <= 0)
             {
-                obstacleSpawned = true;
                 obstacleSpawnRemainTime = obstacleMinSpawnInterval;
                 Spawn(obstacleQueue, obstacleHeight);
             }
@@ -60,21 +60,28 @@ public class Spawner : MonoBehaviour
             }
 
             // 보상 높이 결정
-            int rewardHeight = UnityEngine.Random.Range(0, maxHeight);
-            // 보상하고 함정 위치 겹치나 확인
-            while (obstacleSpawned && obstacleHeight == rewardHeight)
+            int halfHeight = maxHeight / 2;
+            // 함정이 위에 있으면 보상은 아래만 나오게 설정
+            int rewardHeight = isUpObstacle ? 
+                Random.Range(0, halfHeight) : 
+                Random.Range(halfHeight, maxHeight);
+
+            // 보상 생성?
+            if (rewardSpawnRemainTime <= 0)
             {
-                // 겹친다면 재설정
-                rewardHeight = UnityEngine.Random.Range(0, maxHeight);
+                rewardSpawnRemainTime = rewardMinSpawnInterval;
+                Spawn(rewardQueue, rewardHeight);
             }
-            // 보상 생성
-            Spawn(rewardQueue, rewardHeight);
+            else
+            {
+                rewardSpawnRemainTime -= checkSpawnInterval;
+            }
 
             yield return checkWS;
         }
     }
 
-    public void Spawn(Queue<GameObject> spawnQueue, int height)
+    public void Spawn(Queue<MoveLeft> spawnQueue, int height)
     {
         // 밖으로 뺀 후 다시 받아오는 구조
         var obj = spawnQueue.Dequeue();
@@ -88,11 +95,11 @@ public class Spawner : MonoBehaviour
     {
         foreach (var obj in obstacleObjects)
         {
-            obj.SetActive(false);
+            obj.gameObject.SetActive(false);
         }
         foreach (var obj in rewardObjects)
         {
-            obj.SetActive(false);
+            obj.gameObject.SetActive(false);
         }
     }
 }

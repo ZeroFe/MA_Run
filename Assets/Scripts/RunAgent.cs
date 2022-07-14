@@ -4,11 +4,16 @@ using System.Collections.Generic;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class RunAgent : Agent
 {
+    private static readonly float earnCookieReward = 0.03f;
+    private static readonly float gameEndReward = 0.1f;
+    private static readonly float hitObstacleReward = -0.01f;
+
     [Header("Jump")]
     public int maxJumpCount = 1;
     private int currentJumpCount;
@@ -24,8 +29,9 @@ public class RunAgent : Agent
     // Observation Setting
     [Header("Observation Setting")] 
     public CollisionDrawer[] collisionDrawers;
-
-
+    private static readonly int collisionRaw = 8;
+    
+    // Physics Setting
     private Rigidbody rb;
     
     public override void Initialize()
@@ -35,16 +41,16 @@ public class RunAgent : Agent
 
     public override void OnEpisodeBegin()
     {
+        // 점프 중 죽었으면 초기화
         if (transform.localPosition.y > 0.5)
         {
-            rb.angularVelocity = Vector3.zero;
             rb.velocity = Vector3.zero;
             transform.localPosition = Vector3.up * 0.5f;
-
             currentJumpCount = maxJumpCount;
         }
 
-        // 충돌체 초기화
+
+        // 충돌 감지 박스 초기화
         foreach (var collisionDrawer in collisionDrawers)
         {
             collisionDrawer.CollisionState = (int)CollisionDrawer.CollisionType.None;
@@ -56,15 +62,20 @@ public class RunAgent : Agent
         currentGameTime = gameTime;
     }
 
-    private void Update()
+    private void FixedUpdate()
+    {
+        UpdateGameTime();
+    }
+
+    private void UpdateGameTime()
     {
         // 시간 측정
-        currentGameTime -= Time.deltaTime;
+        currentGameTime -= Time.fixedDeltaTime;
         // 설정한 시간 지나면 끝내기
         if (currentGameTime < 0)
         {
-            //print("Game End");
-            SetReward(0.1f);
+            print("Game End");
+            AddReward(gameEndReward);
             EndEpisode();
         }
     }
@@ -75,6 +86,8 @@ public class RunAgent : Agent
         sensor.AddObservation(currentJumpCount);
         // 현재 높이
         sensor.AddObservation(transform.position.y);
+        // 현재 속도
+        sensor.AddObservation(rb.velocity.y);
         // 충돌체 세팅
         for (int i = 0; i < collisionDrawers.Length; i++)
         {
@@ -89,10 +102,14 @@ public class RunAgent : Agent
         var jumpAction = actionBuffers.DiscreteActions[0];
         if (jumpAction == 1 && currentJumpCount > 0)
         {
-            currentJumpCount--;
-            // 점프
-            rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
+            Jump();
         }
+    }
+
+    private void Jump()
+    {
+        currentJumpCount--;
+        rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
@@ -103,25 +120,29 @@ public class RunAgent : Agent
 
     private void OnCollisionEnter(Collision collision)
     {
-        // 땅 만남
+        // 바닥과 충돌
         currentJumpCount = maxJumpCount;
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        int height = (int)other.transform.localPosition.y;
+        if (height > 3) height = 3; // 임시 : 최대 높이 설정
+        collisionDrawers[height * collisionRaw].CollisionState = 0;
         // 함정 충돌
         if (other.CompareTag("Obstacle"))
         {
             // 마이너스 보상
             //print("Hit Obstacle");
-            SetReward(-0.05f);
+            //AddReward(hitObstacleReward);
             EndEpisode();
         }
         // 보상(쿠키)
         else if (other.CompareTag("Reward"))
         {
-            SetReward(0.01f);
+            AddReward(earnCookieReward);
             other.gameObject.SetActive(false);
         }
+
     }
 }
