@@ -43,7 +43,7 @@ public class CollisionDrawer : MonoBehaviour
         meshRenderer = GetComponent<MeshRenderer>();
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Obstacle"))
         {

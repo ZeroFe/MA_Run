@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -12,7 +11,7 @@ public class RunAgent : Agent
 {
     private static readonly float earnCookieReward = 0.03f;
     private static readonly float gameEndReward = 0.1f;
-    private static readonly float hitObstacleReward = -0.01f;
+    private static readonly float hitObstacleReward = -0.005f;
 
     [Header("Jump")]
     public int maxJumpCount = 1;
@@ -22,21 +21,24 @@ public class RunAgent : Agent
     [Header("Spawn Setting")] 
     public Spawner spawner;
 
-    [Header("Game Time Setting")]
-    public float gameTime = 10;
-    private float currentGameTime;
-
     // Observation Setting
     [Header("Observation Setting")] 
     public CollisionDrawer[] collisionDrawers;
     private static readonly int collisionRaw = 8;
-    
+
+    [Header("Test")]
+    private int totalPlayCount = 0;
+    private int successPlayCount = 0;
+
     // Physics Setting
     private Rigidbody rb;
     
     public override void Initialize()
     {
         rb = GetComponent<Rigidbody>();
+
+        spawner.SetMaxCount(MaxStep);
+        spawner.onGameEnd += OnGameEnd;
     }
 
     public override void OnEpisodeBegin()
@@ -58,26 +60,9 @@ public class RunAgent : Agent
         
         // 생성된 함정, 보상 리셋
         spawner.ResetObjects();
-        
-        currentGameTime = gameTime;
-    }
 
-    private void FixedUpdate()
-    {
-        UpdateGameTime();
-    }
-
-    private void UpdateGameTime()
-    {
-        // 시간 측정
-        currentGameTime -= Time.fixedDeltaTime;
-        // 설정한 시간 지나면 끝내기
-        if (currentGameTime < 0)
-        {
-            print("Game End");
-            AddReward(gameEndReward);
-            EndEpisode();
-        }
+        // 디버그
+        totalPlayCount++;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -127,14 +112,16 @@ public class RunAgent : Agent
     private void OnTriggerEnter(Collider other)
     {
         int height = (int)other.transform.localPosition.y;
-        if (height > 3) height = 3; // 임시 : 최대 높이 설정
+        // 
         collisionDrawers[height * collisionRaw].CollisionState = 0;
+        collisionDrawers[height * collisionRaw + 1].CollisionState = 0;
         // 함정 충돌
         if (other.CompareTag("Obstacle"))
         {
             // 마이너스 보상
             //print("Hit Obstacle");
-            //AddReward(hitObstacleReward);
+            AddReward(hitObstacleReward);
+            //LogGameFail();
             EndEpisode();
         }
         // 보상(쿠키)
@@ -142,7 +129,27 @@ public class RunAgent : Agent
         {
             AddReward(earnCookieReward);
             other.gameObject.SetActive(false);
+            spawner.RemainObjCount--;
         }
+    }
 
+    private void OnGameEnd()
+    {
+        //AddReward(gameEndReward);
+        successPlayCount++;
+        //LogGameClear();
+        EndEpisode();
+    }
+
+    private void LogGameFail()
+    {
+        print("hit obstacle");
+        print($"Clear Rate : {(successPlayCount * 100) / totalPlayCount}%");
+    }
+
+    private void LogGameClear()
+    {
+        print("Game Clear");
+        print($"Clear Rate : {(successPlayCount * 100) / totalPlayCount}%");
     }
 }

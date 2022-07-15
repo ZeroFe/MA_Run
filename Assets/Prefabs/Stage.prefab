@@ -411,6 +411,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaef28bc541bb9a44a2198bac256609c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawner: {fileID: 8880604738949957070}
 --- !u!1 &8880604738705811182
 GameObject:
   m_ObjectHideFlags: 0
@@ -732,9 +733,13 @@ MonoBehaviour:
   - {fileID: 8762985998008337857}
   - {fileID: 8762985998102608829}
   - {fileID: 8762985997273103866}
-  checkSpawnInterval: 0.5
-  obstacleMinSpawnInterval: 3
+  obstacleMinSpawnInterval: 0.75
+  obstacleSpawnChance: 0.4
+  obstacleSpawnMaxCount: 5
   rewardMinSpawnInterval: 1
+  rewardSpawnChance: 0.7
+  rewardSpawnMaxCount: 10
+  checkSpawnInterval: 1
   spawnPosX: 20
   initHeight: 0
   maxHeight: 4
@@ -878,7 +883,7 @@ MonoBehaviour:
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 0}
+  m_Model: {fileID: 5022602860645237092, guid: 5136b2693126fa142beb52a7083d2814, type: 3}
   m_InferenceDevice: 2
   m_BehaviorType: 0
   m_BehaviorName: CookieRun
@@ -901,11 +906,10 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 1000
+  MaxStep: 1500
   maxJumpCount: 1
-  jumpPower: 7
+  jumpPower: 6.5
   spawner: {fileID: 8880604738949957070}
-  gameTime: 35
   collisionDrawers:
   - {fileID: 8880604737675604710}
   - {fileID: 7990588509487631664}
