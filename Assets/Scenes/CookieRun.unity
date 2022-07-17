@@ -1035,13 +1035,25 @@ PrefabInstance:
       propertyPath: m_Name
       value: Stage
       objectReference: {fileID: 0}
-    - target: {fileID: 8880604739026522833, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
-      propertyPath: m_Model
-      value: 
-      objectReference: {fileID: 5022602860645237092, guid: 3e538e207f2a5e34686e0b41a054c28d, type: 3}
+    - target: {fileID: 8880604738949957070, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
+      propertyPath: rewardSpawnChance
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880604738949957070, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
+      propertyPath: obstacleSpawnChance
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880604738949957070, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
+      propertyPath: rewardSpawnMaxCount
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8880604738949957070, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
+      propertyPath: obstacleSpawnMaxCount
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 8880604739026522834, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}
       propertyPath: MaxStep
-      value: 2000
+      value: 5000
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 95a45bb7c031741429712ca01abcd58e, type: 3}

@@ -41,12 +41,14 @@ public class Spawner : MonoBehaviour
     }
 
     public float checkSpawnInterval = 0.5f;
-    private WaitForSeconds checkWS;
-    private static readonly float INTERVAL_REVISION_BONUS = 0.01f;
+    private float currentSpawnInterval;
+    private float obstacleSpawnRemainTime = 0.0f;
+    private float rewardSpawnRemainTime = 0.0f;
 
     public float spawnPosX = 20.0f;
     public float initHeight = 0.0f;
     public int maxHeight = 4;
+    private int halfHeight;
 
     public event Action onGameEnd;
 
@@ -61,8 +63,103 @@ public class Spawner : MonoBehaviour
             rewardQueue.Enqueue(t);
         }
 
-        checkWS = new WaitForSeconds(checkSpawnInterval);
+        // 함정이 위에 있으면 보상은 아래에 나오게 결정하는데 사용
+        halfHeight = maxHeight / 2;
+
+        // 실행 전 Init
+        ResetGame();
     }
+
+    #region Spawn
+    private void FixedUpdate()
+    {
+        CheckSpawn();
+    }
+
+    private void CheckSpawn()
+    {
+        currentSpawnInterval -= Time.fixedDeltaTime;
+
+        // 함정 생성
+        bool isObstacleSpawned = SpawnObstacle(out bool isUpObstacle);
+        obstacleSpawnRemainTime -= Time.fixedDeltaTime;
+        
+        // 보상 생성
+        SpawnReward(isObstacleSpawned, isUpObstacle);
+        rewardSpawnRemainTime -= Time.fixedDeltaTime;
+
+        // 이번 Fixed Delta Time에만 생성하게 조절
+        if (currentSpawnInterval < 0)
+        {
+            currentSpawnInterval = checkSpawnInterval;
+        }
+    }
+
+    private bool SpawnObstacle(out bool isUpObstacle)
+    {
+        if (obstacleSpawnRemainTime > 0 ||
+            obstacleSpawnCount <= 0 ||
+            currentSpawnInterval > 0 ||
+            Random.value > obstacleSpawnChance)
+        {
+            isUpObstacle = false;
+            return false;
+        }
+
+        // 함정 높이 결정 : 함정은 위나 아래에만 나오게
+        isUpObstacle = Random.value > 0.5f;
+        int obstacleHeight = isUpObstacle ? maxHeight - 1 : 0;
+        obstacleSpawnRemainTime = obstacleMinSpawnInterval;
+        Spawn(obstacleQueue, obstacleHeight);
+        obstacleSpawnCount--;
+        remainObjCount++;
+        return true;
+    }
+
+    private bool SpawnReward(bool isObstacleSpawned, bool isUpObstacle)
+    {
+        if (rewardSpawnRemainTime > 0 || 
+            rewardSpawnCount <= 0 ||
+            currentSpawnInterval > 0 ||
+            Random.value > rewardSpawnChance)
+        {
+            return false;
+        }
+
+        // 보상 생성 높이 결정
+        int rewardHeight;
+        if (isObstacleSpawned)
+        {
+            // 함정이 위에 있으면 보상은 아래만 나오게 설정
+            rewardHeight = isUpObstacle ?
+                Random.Range(0, halfHeight) :
+                Random.Range(halfHeight, maxHeight);
+        }
+        else
+        {
+            // 함정이 없다면 높이가 딱히 조정될 필요 없음
+            rewardHeight = Random.Range(0, maxHeight);
+        }
+
+        rewardSpawnRemainTime = rewardMinSpawnInterval;
+        Spawn(rewardQueue, rewardHeight);
+        rewardSpawnCount--;
+        remainObjCount++;
+
+        return true;
+    }
+
+    private void Spawn(Queue<MoveLeft> spawnQueue, int height)
+    {
+        // 밖으로 뺀 후 다시 받아오는 구조
+        var obj = spawnQueue.Dequeue();
+        spawnQueue.Enqueue(obj);
+        obj.gameObject.SetActive(true);
+        var y = initHeight + height;
+        obj.transform.localPosition = new Vector3(spawnPosX, y, 0);
+    }
+
+    #endregion
 
     /// <summary>
     /// MaxStep에 맞게 최대 생성 카운트를 조절한다
@@ -76,7 +173,7 @@ public class Spawner : MonoBehaviour
         rewardSpawnMaxCount = (int)(rewardSpawnMaxCount * maxStepPermile);
     }
 
-    public void ResetObjects()
+    public void ResetGame()
     {
         foreach (var obj in obstacleObjects)
         {
@@ -88,77 +185,13 @@ public class Spawner : MonoBehaviour
         }
 
         // 게임을 재시작하면 기촌 생성 주기도 초기화해야한다
-        StopCoroutine(nameof(IEStartGame));
-        StartCoroutine(nameof(IEStartGame));
-    }
-
-    IEnumerator IEStartGame()
-    {
-        float obstacleSpawnRemainTime = 0.0f;
-        float rewardSpawnRemainTime = 0.0f;
-
         remainObjCount = 0;
         obstacleSpawnCount = obstacleSpawnMaxCount;
         rewardSpawnCount = rewardSpawnMaxCount;
-        // 이번에 생성할지 말지 판단한다
-        while (obstacleSpawnCount > 0 || rewardSpawnCount > 0)
-        {
-            bool spawnedObstacle = obstacleSpawnRemainTime <= 0 &&
-                                   obstacleSpawnCount > 0 &&
-                                   Random.value < obstacleSpawnChance;
-            // 함정 높이 결정 : 함정은 위나 아래에만 나오게
-            bool isUpObstacle = Random.value > 0.5f;
-            int obstacleHeight = isUpObstacle ? maxHeight - 1 : 0;
-            // 함정 생성?
-            if (spawnedObstacle)
-            {
-                obstacleSpawnRemainTime = obstacleMinSpawnInterval;
-                Spawn(obstacleQueue, obstacleHeight);
-                obstacleSpawnCount--;
-                remainObjCount++;
-            }
-            else
-            {
-                // 빼기 수행 시 소수점 정확도 문제로 주기가 틀어질 수 있으므로 보정을 해준다
-                obstacleSpawnRemainTime -= checkSpawnInterval + INTERVAL_REVISION_BONUS;
-            }
 
-            bool spawnedReward = rewardSpawnRemainTime <= 0 &&
-                                 rewardSpawnCount > 0 &&
-                                 Random.value < rewardSpawnChance;
-
-            // 보상 높이 결정
-            int halfHeight = maxHeight / 2;
-            // 함정이 위에 있으면 보상은 아래만 나오게 설정
-            int rewardHeight = isUpObstacle ? 
-                Random.Range(0, halfHeight) : 
-                Random.Range(halfHeight, maxHeight);
-
-            // 보상 생성?
-            if (spawnedReward)
-            {
-                rewardSpawnRemainTime = rewardMinSpawnInterval;
-                Spawn(rewardQueue, rewardHeight);
-                rewardSpawnCount--;
-                remainObjCount++;
-            }
-            else
-            {
-                rewardSpawnRemainTime -= checkSpawnInterval + INTERVAL_REVISION_BONUS;
-            }
-
-            yield return checkWS;
-        }
-    }
-
-    public void Spawn(Queue<MoveLeft> spawnQueue, int height)
-    {
-        // 밖으로 뺀 후 다시 받아오는 구조
-        var obj = spawnQueue.Dequeue();
-        spawnQueue.Enqueue(obj);
-        obj.gameObject.SetActive(true);
-        var y = initHeight + height;
-        obj.transform.localPosition = new Vector3(spawnPosX, y, 0);
+        currentSpawnInterval = checkSpawnInterval;
+        obstacleSpawnRemainTime = 0.0f;
+        rewardSpawnRemainTime = 0.0f;
     }
 
     public void CheckGameEnd()

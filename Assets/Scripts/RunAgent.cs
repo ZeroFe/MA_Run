@@ -9,9 +9,9 @@ using Random = UnityEngine.Random;
 
 public class RunAgent : Agent
 {
-    private static readonly float earnCookieReward = 0.03f;
+    private static readonly float earnCookieReward = 0.1f;
     private static readonly float gameEndReward = 0.1f;
-    private static readonly float hitObstacleReward = -0.005f;
+    private static readonly float hitObstacleReward = -0.1f;
 
     [Header("Jump")]
     public int maxJumpCount = 1;
@@ -59,7 +59,7 @@ public class RunAgent : Agent
         }
         
         // 생성된 함정, 보상 리셋
-        spawner.ResetObjects();
+        spawner.ResetGame();
 
         // 디버그
         totalPlayCount++;
