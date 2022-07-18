@@ -51,7 +51,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1574706383492440810}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -111,7 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1740bc5d60a6e7b4d922ff4c1fe06408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollisionState: 0
+  collisionState: 0
   colorMats:
   - {fileID: 2100000, guid: dbfc005739e2dcd43938840c11e75e29, type: 2}
   - {fileID: 2100000, guid: dab6bff726afea348a6339f496a8ee1b, type: 2}

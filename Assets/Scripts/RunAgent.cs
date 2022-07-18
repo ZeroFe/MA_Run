@@ -32,10 +32,12 @@ public class RunAgent : Agent
 
     // Physics Setting
     private Rigidbody rb;
+    private Animator anim;
     
     public override void Initialize()
     {
         rb = GetComponent<Rigidbody>();
+        anim = GetComponentInChildren<Animator>();
 
         spawner.SetMaxCount(MaxStep);
         spawner.onGameEnd += OnGameEnd;
@@ -95,6 +97,7 @@ public class RunAgent : Agent
     {
         currentJumpCount--;
         rb.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
+        anim.SetTrigger("Jump_trig");
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)

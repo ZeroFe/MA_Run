@@ -9,7 +9,10 @@ public class Spawner : MonoBehaviour
 {
     [Tooltip("사용할 장애물 Object 목록")] 
     public List<MoveLeft> obstacleObjects;
-    private Queue<MoveLeft> obstacleQueue = new Queue<MoveLeft>();
+    [Tooltip("사용할 장애물 Object(위쪽) 목록")]
+    public List<MoveLeft> obstacleHighObjects;
+    private Queue<MoveLeft> obstacleLowQueue = new Queue<MoveLeft>();
+    private Queue<MoveLeft> obstacleHighQueue = new Queue<MoveLeft>();
     [Tooltip("사용할 보상 Object 목록")] 
     public List<MoveLeft> rewardObjects;
     private Queue<MoveLeft> rewardQueue = new Queue<MoveLeft>();
@@ -56,7 +59,11 @@ public class Spawner : MonoBehaviour
     {
         foreach (var t in obstacleObjects)
         {
-            obstacleQueue.Enqueue(t);
+            obstacleLowQueue.Enqueue(t);
+        }
+        foreach (var t in obstacleHighObjects)
+        {
+            obstacleHighQueue.Enqueue(t);
         }
         foreach (var t in rewardObjects)
         {
@@ -109,8 +116,9 @@ public class Spawner : MonoBehaviour
         // 함정 높이 결정 : 함정은 위나 아래에만 나오게
         isUpObstacle = Random.value > 0.5f;
         int obstacleHeight = isUpObstacle ? maxHeight - 1 : 0;
+        var spawnQueue = isUpObstacle ? obstacleHighQueue : obstacleLowQueue;
+        Spawn(spawnQueue, obstacleHeight);
         obstacleSpawnRemainTime = obstacleMinSpawnInterval;
-        Spawn(obstacleQueue, obstacleHeight);
         obstacleSpawnCount--;
         remainObjCount++;
         return true;
@@ -176,6 +184,10 @@ public class Spawner : MonoBehaviour
     public void ResetGame()
     {
         foreach (var obj in obstacleObjects)
+        {
+            obj.gameObject.SetActive(false);
+        }
+        foreach (var obj in obstacleHighObjects)
         {
             obj.gameObject.SetActive(false);
         }
